@@ -54,12 +54,6 @@
             padding: 25px;
         }
 
-        .video-container {
-            margin-bottom: 25px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
 
         .controls {
             display: flex;
@@ -220,12 +214,6 @@
         </header>
 
         <div class="content">
-            <div class="video-container">
-                <video id="myVideo" controls width="100%" autoplay style="background:#000;">
-                    <source src="https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
 
             <div class="controls">
                 <button id="scanBtn">
@@ -287,19 +275,20 @@
                 showStatus("Scanning for Bluetooth printers...", "info");
 
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{
-                            namePrefix: 'GT'
-                        }, // Common thermal printer prefixes
-                        {
-                            namePrefix: 'PRT'
-                        },
-                        {
-                            namePrefix: 'BT'
-                        },
-                        {
-                            namePrefix: 'Printer'
-                        }
-                    ],
+                    acceptAllDevices: true,
+                    // filters: [{
+                    //         namePrefix: 'GT'
+                    //     }, // Common thermal printer prefixes
+                    //     {
+                    //         namePrefix: 'PRT'
+                    //     },
+                    //     {
+                    //         namePrefix: 'BT'
+                    //     },
+                    //     {
+                    //         namePrefix: 'Printer'
+                    //     }
+                    // ],
                     optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Printer service
                 });
 
