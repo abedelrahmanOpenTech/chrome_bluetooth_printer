@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLE Printer Demo - Fixed</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .video-container {
+            margin-bottom: 25px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button i {
+            margin-right: 8px;
+        }
+
+        .printer-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .printer-list h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+
+        #printerList {
+            list-style-type: none;
+        }
+
+        #printerList li {
+            padding: 12px 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        #printerList li:hover {
+            background: #e3f2fd;
+            border-color: #3498db;
+        }
+
+        .preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .preview h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        #myDiv {
+            width: 500px;
+            /* height: 100px; */
+            background: #fff;
+            color: #2c3e50;
+            border: 2px dashed #3498db;
+            font-size: 20px;
+            font-weight: bold;
+            /* text-align: center; */
+            /* line-height: 100px; */
+            /* margin: 0 auto; */
+            /* border-radius: 10px; */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>BLE Printer Demo</h1>
+            <p class="subtitle">Print text and images to your Bluetooth thermal printer</p>
+        </header>
+
+        <div class="content">
+            <div class="video-container">
+                <video id="myVideo" controls width="100%" autoplay style="background:#000;">
+                    <source src="https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="controls">
+                <button id="scanBtn">
+                    <i>🔍</i> Scan Printers
+                </button>
+                <button id="printTextBtn" disabled>
+                    <i>🖨️</i> Print Text
+                </button>
+                <button id="printDivBtn" disabled>
+                    <i>🖼️</i> Print Div as Image
+                </button>
+            </div>
+
+            <div class="printer-list">
+                <h3>Discovered Printers</h3>
+                <ul id="printerList"></ul>
+            </div>
+
+            <div class="preview">
+                <h3>Preview</h3>
+                <div id="myDiv">
+                    Hello, BLE Printer!
+                    <div style="font-weight: bold;">
+                        وقفنا في كتاب "الحضارة - وكيف هيمنت حضارة الغرب" لدانيال فرغسون على سبعة مقوّمات لهيمنة حضارة الغرب على العالم أجمع. وهنا أسأل: هل يمكن لهذه المقوّمات السبعة، أو لبعضها، أن تتجسّد في نموذج مؤسسي أصغر مثل نموذج الفرد أو نموذج العائلة أو نموذج الحي؟ إن الراجح أنّه من الممكن أن تتحقق هذه المؤسسات الصغيرة بدرجات مختلفة، مستفيدة من بعض هذه المقوّمات.
+
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="status" class="status info">
+                Please scan for printers to begin
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>BLE Printer Demo - Fixed Solution | Thermal Printer Compatible</p>
+    </footer>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        let printerDevice, printerCharacteristic;
+        const printerListEl = document.getElementById("printerList");
+        const printTextBtn = document.getElementById("printTextBtn");
+        const printDivBtn = document.getElementById("printDivBtn");
+        const statusEl = document.getElementById("status");
+        const scanBtn = document.getElementById("scanBtn");
+
+        function showStatus(message, type = "info") {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        // --- Scan for BLE printers ---
+        scanBtn.addEventListener("click", async () => {
+            try {
+                showStatus("Scanning for Bluetooth printers...", "info");
+
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{
+                            namePrefix: 'GT'
+                        }, // Common thermal printer prefixes
+                        {
+                            namePrefix: 'PRT'
+                        },
+                        {
+                            namePrefix: 'BT'
+                        },
+                        {
+                            namePrefix: 'Printer'
+                        }
+                    ],
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Printer service
+                });
+
+                const li = document.createElement("li");
+                li.textContent = device.name || "Unnamed device";
+                li.style.cursor = "pointer";
+                li.onclick = () => connectPrinter(device);
+                printerListEl.appendChild(li);
+
+                showStatus(`Found: ${device.name || "Unnamed device"}. Click to connect.`, "info");
+
+            } catch (err) {
+                showStatus("Scan failed: " + err.message, "error");
+                console.error(err);
+            }
+        });
+
+        // --- Connect to selected printer ---
+        async function connectPrinter(device) {
+            try {
+                showStatus("Connecting to printer...", "info");
+                printerDevice = device;
+                const server = await device.gatt.connect();
+
+                // Find the printer service
+                const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+
+                // Find writable characteristic
+                const characteristics = await service.getCharacteristics();
+                for (const c of characteristics) {
+                    if (c.properties.write || c.properties.writeWithoutResponse) {
+                        printerCharacteristic = c;
+                        break;
+                    }
+                }
+
+                if (printerCharacteristic) {
+                    showStatus(`✅ Connected to: ${device.name || "Unknown printer"}`, "connected");
+                    printTextBtn.disabled = false;
+                    printDivBtn.disabled = false;
+                } else {
+                    showStatus("No writable characteristic found!", "error");
+                }
+
+            } catch (err) {
+                showStatus("Connection failed: " + err.message, "error");
+                console.error(err);
+            }
+        }
+
+        // --- BLE chunked write helper ---
+        async function writeInChunks(characteristic, data, chunkSize = 100) {
+            for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                await characteristic.writeValue(chunk);
+                await new Promise(r => setTimeout(r, 20));
+            }
+        }
+
+        // --- Initialize printer with ESC/POS commands ---
+        function initializePrinter() {
+            const initCommands = [
+                0x1B, 0x40, // Initialize printer
+                0x1B, 0x33, 0x00, // Set line spacing to 0
+            ];
+            return new Uint8Array(initCommands);
+        }
+
+        // --- Convert canvas to ESC/POS monochrome ---
+        function canvasToESCBytes(canvas) {
+            const ctx = canvas.getContext("2d");
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            // Calculate printable width (multiple of 8)
+            const printableWidth = Math.ceil(width / 8) * 8;
+
+            const bytes = [];
+
+            // GS v 0 command: Print raster bit image
+            // GS v 0 m xL xH yL yH d1...dk
+            const xL = printableWidth / 8 & 0xff;
+            const xH = (printableWidth / 8 >> 8) & 0xff;
+            const yL = height & 0xff;
+            const yH = (height >> 8) & 0xff;
+
+            // Command header
+            bytes.push(0x1D, 0x76, 0x30, 0x00); // GS v 0 m=0 (normal size)
+            bytes.push(xL, xH, yL, yH);
+
+            // Process image data
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < printableWidth; x += 8) {
+                    let byte = 0;
+
+                    for (let bit = 0; bit < 8; bit++) {
+                        const pixelX = x + bit;
+
+                        if (pixelX < width) {
+                            const idx = (y * width + pixelX) * 4;
+                            const r = data[idx];
+                            const g = data[idx + 1];
+                            const b = data[idx + 2];
+
+                            // Convert to grayscale and check against threshold
+                            const gray = (r + g + b) / 3;
+
+                            if (gray < 128) { // Threshold for black/white
+                                byte |= (0x80 >> bit); // Set bit if pixel is dark
+                            }
+                        }
+                    }
+
+                    bytes.push(byte);
+                }
+            }
+
+            return new Uint8Array(bytes);
+        }
+
+        // --- Print text ---
+        printTextBtn.addEventListener("click", async () => {
+            if (!printerCharacteristic) return;
+            try {
+                showStatus("Printing text...", "info");
+
+                // Initialize printer
+                const initData = initializePrinter();
+                await writeInChunks(printerCharacteristic, initData);
+
+                // Create text with proper ESC/POS commands
+                let textData = new Uint8Array([
+                    // Initialize printer
+                    0x1B, 0x40,
+
+                    // Set text mode
+                    0x1B, 0x21, 0x00,
+
+                    // Bold on
+                    0x1B, 0x45, 0x01,
+                ]);
+
+                await writeInChunks(printerCharacteristic, textData);
+
+                // Print "Hello World!" text
+                const encoder = new TextEncoder();
+                let text = "Hello World!\n";
+                await writeInChunks(printerCharacteristic, encoder.encode(text));
+
+                // Bold off
+                textData = new Uint8Array([0x1B, 0x45, 0x00]);
+                await writeInChunks(printerCharacteristic, textData);
+
+                // Print additional text
+                text = "This is a test print\n";
+                await writeInChunks(printerCharacteristic, encoder.encode(text));
+
+                // Center alignment
+                textData = new Uint8Array([0x1B, 0x61, 0x01]);
+                await writeInChunks(printerCharacteristic, textData);
+
+                text = "Centered text\n\n";
+                await writeInChunks(printerCharacteristic, encoder.encode(text));
+
+                // Left alignment
+                textData = new Uint8Array([0x1B, 0x61, 0x00]);
+                await writeInChunks(printerCharacteristic, textData);
+
+                // Feed 2 lines
+                textData = new Uint8Array([0x1B, 0x64, 0x02]);
+                await writeInChunks(printerCharacteristic, textData);
+
+                showStatus("✅ Text printed successfully!", "connected");
+            } catch (err) {
+                showStatus("❌ Print text failed: " + err, "error");
+                console.error(err);
+            }
+        });
+
+        // --- Print div as image ---
+        printDivBtn.addEventListener("click", async () => {
+            if (!printerCharacteristic) return;
+
+            const div = document.getElementById("myDiv");
+            const canvas = document.getElementById("canvas");
+
+            try {
+                showStatus("Converting div to image...", "info");
+
+                // Convert div to canvas with proper dimensions for thermal printer
+                const canvasRender = await html2canvas(div, {
+                    backgroundColor: "#FFFFFF",
+                    scale: 1,
+                    // width: 500, // Standard thermal printer width in pixels
+                    // height: 100
+                });
+
+                canvas.width = canvasRender.width;
+                canvas.height = canvasRender.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(canvasRender, 0, 0);
+
+                showStatus("Sending image to printer...", "info");
+
+                // Initialize printer
+                const initData = initializePrinter();
+                await writeInChunks(printerCharacteristic, initData);
+
+                // Convert to ESC/POS and print
+                const imageData = canvasToESCBytes(canvas);
+                await writeInChunks(printerCharacteristic, imageData);
+
+                // Add some line feeds after the image
+                const lineFeeds = new TextEncoder().encode("\n\n\n");
+                await writeInChunks(printerCharacteristic, lineFeeds);
+
+                showStatus("✅ Image printed successfully!", "connected");
+            } catch (err) {
+                showStatus("❌ Print image failed: " + err, "error");
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+
+</html>
