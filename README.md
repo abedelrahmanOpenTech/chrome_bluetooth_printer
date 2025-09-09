@@ -20,16 +20,6 @@ A web-based demo to **scan, connect, and print** text or HTML elements as images
 
 ---
 
-## Demo Layout
-
-1. **Header** – Title and subtitle.
-2. **Video Preview** – Demo video embedded.
-3. **Controls** – Scan printers, print text, print div.
-4. **Printer List** – Discovered BLE printers (click to connect).
-5. **Preview Div** – Div content to print as image.
-6. **Status Box** – Shows current status of printer actions.
-
----
 
 ## How to Use
 
